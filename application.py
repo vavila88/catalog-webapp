@@ -33,6 +33,9 @@ Base.metadata.bind = engine
 DBSession = sessionmaker(bind=engine)
 session = DBSession()
 
+# extract the client_id and secrets from our secrets file.
+CLIENT_ID = \
+    json.loads(open('client_secret.json','r').read())['web']['client_id']
 
 @app.route('/')
 @app.route('/catalog')
@@ -97,7 +100,7 @@ def new_cat_item(category):
 
 @app.route('/login')
 def login():
-    return render_template('index')
+    return render_template('login.html', clientId=CLIENT_ID)
 
 
 @app.route('/logout')
