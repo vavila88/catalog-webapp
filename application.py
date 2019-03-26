@@ -35,6 +35,7 @@ session = DBSession()
 
 
 @app.route('/')
+@app.route('/catalog')
 def index():
     return 'TODO: display the landing page with the following info:\n'\
         '\t- Page header including log-in/out button\n'\
@@ -92,6 +93,17 @@ def new_cat_item(category):
         '\t- Category dropdown with all available categories\n'\
         '\t\tNOTE: This field should also contain an "other" option where '\
         'you can specify a new category\n'\
+
+
+@app.route('/login')
+def login():
+    return render_template('index')
+
+
+@app.route('/logout')
+def logout():
+    return redirect('/catalog')
+
 
 #
 # JSON endpoints
