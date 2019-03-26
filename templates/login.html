@@ -1,0 +1,118 @@
+<html>
+    <head>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+        <script src="https://apis.google.com/js/client:platform.js?onload=start" async defer></script>
+        <script>
+            function start() {
+                gapi.load('auth2', function() {
+                    auth2 = gapi.auth2.init({
+                        client_id : '{{clientId}}',
+                        scope : 'openid email',
+                        approval_prompt : 'force',
+                        cookie_policy : 'single_host_origin',
+                        access_type : 'offline',
+                        redirect_uri : 'postmessage'
+                    });
+                });
+            }
+        </script>
+    </head>
+    <body>
+        <!-- Google OAuth login section -->
+        <button id="signinButton">Sign in with Google</button>
+        <div id="result"></div>
+        <script>
+            $('#signinButton').click(function() {
+                function signInCallback(authResult){
+                    if (authResult['code']) {
+                        // hide the sign in button now that we're auth'd
+                        $('#signinButton').attr('style', 'display:none');
+
+                        // Send token to server
+                        $.ajax({
+                            type : 'POST',
+                            url : '/gconnect?state={{STATE}}',
+                            headers : {
+                                'X-Requested-With' : 'XMLHttpRequest'
+                            },
+                            contentType : 'application/octet-stream;, charset=utf-8',
+                            success : function(result) {
+                                $('#result').html('Login Successful!</br>'+ result + '</br>Redirecting...')
+                                setTimeout(function() {
+                                    window.location.href = "/";
+                                }, 2000);
+                            },
+                            processData : false,
+                            data : authResult['code']
+                        });
+                    }
+                    else {
+                        // error in getting the token
+                        console.log('There was an error: '+ authResult['error']);
+                        $('#result').html('Failed to make a server-side call. Check your configuration and console.');
+                    }
+                }
+            auth2.grantOfflineAccess().then(signInCallback);
+        });
+        </script>
+        <!-- The script below adds the fb login js source-->
+        <script>
+            window.fbAsyncInit = function() {
+                FB.init({
+                    appId      : '2115004751909135',
+                    cookie     : true,
+                    xfbml      : true,
+                    version    : 'v3.2'
+                });
+            };
+
+            // asynchronously load the FB JS SDK so we have access to the fb:
+            // tags and such
+            (function(d, s, id){
+                var js, fjs = d.getElementsByTagName(s)[0];
+                if (d.getElementById(id)) return;
+                js = d.createElement(s); js.id = id;
+                js.src = "https://connect.facebook.net/en_US/sdk.js";
+                fjs.parentNode.insertBefore(js, fjs);
+            }(document, 'script', 'facebook-jssdk'));
+
+            function sendTokenToServer() {
+                // get the access token from the FB api
+                var access_token = FB.getAuthResponse()['accessToken'];
+                //sanity checks
+                console.log('Welcome! Fetching access token...');
+                console.log(access_token);
+                // Ping the FB api and send the token to our server
+                FB.api('/me', function (response) {
+                    console.log('Successful login for: ' +response.name);
+                    // ajax post to our server with the access token
+                    $.ajax({
+                        type: 'POST',
+                        url: '/fbconnect?state={{STATE}}',
+                        processData : false,
+                        data : access_token,
+                        contentType : 'application/octet-stream;, charset=utf-8',
+                        success : function(result) {
+                            // basic handling of the results from our server
+                            if(result) {
+                                $('#result').html('Facebook login Successful!</br>'+ result + '</br>Redirecting...')
+                                setTimeout(function() {
+                                    window.location.href = "/";
+                                    }, 4000);
+                            } else {
+                                // error in getting the token
+                                $('#result').html('Failed to make a server-side call. Check your configuration and console.');
+                            }
+                        }
+                    });
+                });
+            }
+        </script>
+        <!-- Use the FB api to create a button to be used for login -->
+        <button>
+            <fb:login-button scope="public_profile,email" onlogin="sendTokenToServer();">
+                <a hfer='javascript:sendTokenToServer()'>Login with Facebook</a>
+            </fb:login-button>
+        </button>
+    </body>
+</html>
