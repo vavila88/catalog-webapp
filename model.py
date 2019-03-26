@@ -17,7 +17,8 @@ class User(Base):
     """
     __tablename__='user'
     id = Column(Integer, primary_key=True)
-    uname = Column(String(32))
+    # create an index on the users to speed up user search
+    uname = Column(String(32), index=True)
     email = Column(String(32))
 
     @property
@@ -29,31 +30,47 @@ class User(Base):
                 }
 
 
-class Item(Base):
+class Category(Base):
     """
-    Item - table used to hold an instance of an item inserted into the catalog.
-    An item contains the following fields
-        id - primary key for the items in the table.
-        name - name of the item
-        category - category the item falls under, e.g., "electronics"
-        desc - description of the item
-        created_by - a reference to an entry in the User table establishing a
-            creator-item relationship
     """
-    __tablename__='item'
+    __tablename__='category'
     id = Column(Integer, primary_key=True)
     name = Column(String(32))
-    category = Column(String(32))
-    desc = Column(String)
-    created_by = Column(Integer, ForeignKey('user.id'))
-
-    user = relationship(User)
 
     @property
     def serialize(self):
         return {
                 'id':self.id,
                 'name':self.name,
+                }
+
+
+class Item(Base):
+    """
+    Item - table used to hold an instance of an item inserted into the catalog.
+    An item contains the following fields
+        id - primary key for the items in the table.
+        title - name of the item
+        category - category the item falls under, e.g., "electronics"
+        desc - description of the item
+        created_by - a reference to an entry in the User table establishing a
+            creator-item relationship
+    """
+    __tablename__='item'
+    title = Column(String(32))
+    id = Column(Integer, primary_key=True)
+    description = Column(String)
+    cat_id = Column(Integer, ForeignKey('category.id'))
+    # created_by = Column(Integer, ForeignKey('user.id'))
+
+    category = relationship(Category)
+    # user = relationship(User)
+
+    @property
+    def serialize(self):
+        return {
+                'id':self.id,
+                'title':self.title,
                 'category':self.category,
                 'created_by':self.created_by
                 }
