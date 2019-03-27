@@ -19,6 +19,7 @@
     </head>
     <body>
         <!-- Google OAuth login section -->
+        <h1><strong>TODO: Make this page a bit prettier</strong></h1>
         <button id="signinButton">Sign in with Google</button>
         <div id="result"></div>
         <script>
@@ -31,7 +32,7 @@
                         // Send token to server
                         $.ajax({
                             type : 'POST',
-                            url : '/gconnect?state={{STATE}}',
+                            url : '/login?state={{STATE}}',
                             headers : {
                                 'X-Requested-With' : 'XMLHttpRequest'
                             },
@@ -55,64 +56,5 @@
             auth2.grantOfflineAccess().then(signInCallback);
         });
         </script>
-        <!-- The script below adds the fb login js source-->
-        <script>
-            window.fbAsyncInit = function() {
-                FB.init({
-                    appId      : '2115004751909135',
-                    cookie     : true,
-                    xfbml      : true,
-                    version    : 'v3.2'
-                });
-            };
-
-            // asynchronously load the FB JS SDK so we have access to the fb:
-            // tags and such
-            (function(d, s, id){
-                var js, fjs = d.getElementsByTagName(s)[0];
-                if (d.getElementById(id)) return;
-                js = d.createElement(s); js.id = id;
-                js.src = "https://connect.facebook.net/en_US/sdk.js";
-                fjs.parentNode.insertBefore(js, fjs);
-            }(document, 'script', 'facebook-jssdk'));
-
-            function sendTokenToServer() {
-                // get the access token from the FB api
-                var access_token = FB.getAuthResponse()['accessToken'];
-                //sanity checks
-                console.log('Welcome! Fetching access token...');
-                console.log(access_token);
-                // Ping the FB api and send the token to our server
-                FB.api('/me', function (response) {
-                    console.log('Successful login for: ' +response.name);
-                    // ajax post to our server with the access token
-                    $.ajax({
-                        type: 'POST',
-                        url: '/fbconnect?state={{STATE}}',
-                        processData : false,
-                        data : access_token,
-                        contentType : 'application/octet-stream;, charset=utf-8',
-                        success : function(result) {
-                            // basic handling of the results from our server
-                            if(result) {
-                                $('#result').html('Facebook login Successful!</br>'+ result + '</br>Redirecting...')
-                                setTimeout(function() {
-                                    window.location.href = "/";
-                                    }, 4000);
-                            } else {
-                                // error in getting the token
-                                $('#result').html('Failed to make a server-side call. Check your configuration and console.');
-                            }
-                        }
-                    });
-                });
-            }
-        </script>
-        <!-- Use the FB api to create a button to be used for login -->
-        <button>
-            <fb:login-button scope="public_profile,email" onlogin="sendTokenToServer();">
-                <a hfer='javascript:sendTokenToServer()'>Login with Facebook</a>
-            </fb:login-button>
-        </button>
     </body>
 </html>
