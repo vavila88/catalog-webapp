@@ -82,6 +82,7 @@ def edit_cat_item(category):
         'you can specify a new category\n'\
 
 
+@app.route('/catalog/new')
 @app.route('/catalog/<category>/new')
 def new_cat_item(category):
     return 'TODO: display the new page with the following info:\n'\
@@ -123,7 +124,7 @@ def login():
             # respond that there was a mismatch
             response = make_response(json.dumps('Invalid state parameter'), 401)
             response.headers['Content-Type'] = 'application/json'
-            return responsepostmessage
+            return response
 
         # consume the state provided for this particular login flow
         login_session['state'] = None
@@ -135,8 +136,9 @@ def login():
         try:
             # creats an oauth flow object, adds client secret key
             oauth_flow = flow_from_clientsecrets('client_secret.json', scope='')
-            # specify the uri that will handle the callback for the token
-            # exchange
+            # NOTE: despite the redirect URI not being used in this flow, it
+            # MUST be set as follows, otherwise Flask throws a 401 -
+            # unauthorized error. It does not need to be present in the html
             oauth_flow.redirect_uri = 'postmessage'
             # This line does the exchange of the OTC for the credentials object
             credentials = oauth_flow.step2_exchange(code)
