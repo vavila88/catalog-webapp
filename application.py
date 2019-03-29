@@ -2,7 +2,7 @@
 from flask import Flask, render_template, request, redirect,jsonify, url_for, flash
 app = Flask(__name__)
 
-from sqlalchemy import create_engine, asc
+from sqlalchemy import create_engine, asc, desc
 from sqlalchemy.orm import sessionmaker
 from model import Base, User, Item, Category
 
@@ -40,7 +40,12 @@ CLIENT_ID = \
 @app.route('/')
 @app.route('/catalog')
 def index():
-    return render_template('catalog.html')
+    categories = session.query(Category).order_by(asc(Category.name))
+    latest_items = session.query(Item).order_by(desc(Item.id)).limit(5).all()
+    print('items:')
+    for i in latest_items:
+        print(i.slug)
+    return render_template('catalog.html', categories=categories, items=latest_items)
 
 
 @app.route('/catalog/<category>/items')
@@ -52,26 +57,28 @@ def show_all_cat_items(category):
         '\t- if the use is logged in, show an option to add an item\n'
 
 
-@app.route('/catalog/<category>/<item>')
-def show_cat_item(category, item):
+@app.route('/catalog/<slug>')
+def show_cat_item(slug):
     """
     """
+    item = session.query(Item).filter_by(id=item).one()
+    cat = session.query(Category).filter_by(id=item.cat_id).one()
     return 'TODO: display the page with the following info:\n'\
         '\t- Page header including log-in/out button\n'\
         '\t- Item name as a heading and item description\n'\
         '\t- if the use is logged in, show an option to edit/delete the item\n'
 
 
-@app.route('/catalog/<category>/delete')
-def delete_cat_item(category):
+@app.route('/catalog/<slug>/delete')
+def delete_cat_item(slug):
     return 'TODO: display the delete conf page with the following info:\n'\
         '\t- Page header including log-in/out button\n'\
         '\t- Item deletion confirmation message\n'\
         '\t- Item deletion confirmation button\n'\
 
 
-@app.route('/catalog/<category>/edit')
-def edit_cat_item(category):
+@app.route('/catalog/<slug>/edit')
+def edit_cat_item(slug):
     return 'TODO: display the edit page with the following info:\n'\
         '\t- Page header including log-in/out button\n'\
         '\t- Edit header\n'\
@@ -82,17 +89,81 @@ def edit_cat_item(category):
         'you can specify a new category\n'\
 
 
-@app.route('/catalog/new')
-@app.route('/catalog/<category>/new')
-def new_cat_item(category):
-    return 'TODO: display the new page with the following info:\n'\
-        '\t- Page header including log-in/out button\n'\
-        '\t- Edit header\n'\
-        '\t- Title(name) input field for the title of item\n'\
-        '\t- Description input field\n'\
-        '\t- Category dropdown with all available categories\n'\
-        '\t\tNOTE: This field should also contain an "other" option where '\
-        'you can specify a new category\n'\
+@app.route('/catalog/new', methods=['GET','POST'])
+def new_item():
+    """
+    new_item - Function that creates a new item. This function also creates a
+    new category for items, as opposed to placing the item in an existing
+    category
+    """
+    if request.method == 'GET':
+        # Get all categories in the database, will be used to populate a
+        # dropdown
+        category_list = session.query(Category).all()
+        return render_template('new_category_item.html',
+                category_list=category_list)
+    elif request.method == 'POST':
+        # the data from the text fields are stored in the request.form dict
+        print(request.form)
+        # the name of the select element, use this along with the form elements
+        # to determine if a new category was requested to be added. Also check
+        # for duplicate categories.
+        print(request.form.get('category_select'))
+
+        # extract the form data
+        item_cat = (request.form['category_select'])
+        item_title = (request.form['title'])
+        item_desc = (request.form['description'])
+
+        # cases when adding a new item:
+        # 1 - Category exists, get the cat and add the item to Item table
+        try:
+            try:
+                print('Attemtpting to retrieve the specified catgeory')
+                category = session.query(Category).filter_by(name=item_cat).one()
+            except:
+                new_cat_name = str(request.form['new_cat_title'])
+                print('Create a new category with name - {}'.format(new_cat_name))
+                new_category = Category(name=new_cat_name)
+                session.add(new_category)
+                session.commit()
+
+                category = session.query(Category).filter_by(name=new_cat_name).\
+                        one()
+
+            item_slug = get_slug(category.name)
+            print('Creating a new item with name - {}, cat_id - {}, desc -'\
+                    '"{}", slug - {}'.format(item_title, item_desc, \
+                        category.id, item_slug))
+            newItem = Item(title=item_title, description=item_desc,
+                cat_id=category.id, slug=item_slug)
+            session.add(newItem)
+            session.commit()
+
+
+            # 2 - New cat specified, validate input and proceed
+            #   a - if the new cat doesn't exist, add it
+            #   b - if the new cat already exists, just add the item to the existing
+            #   cat
+
+            categories = session.query(Category).order_by(asc(Category.name))
+            latest_items = session.query(Item).order_by(desc(Item.id)).limit(5)
+            return redirect(url_for('index'))
+        except:
+            flash('Unable to add duplicate item to the database: %s' %
+                    item_title)
+            categories = session.query(Category).order_by(asc(Category.name))
+            latest_items = session.query(Item).order_by(desc(Item.id)).limit(5)
+            return redirect(url_for('index'))
+
+
+def get_slug(base):
+    """
+    get_slug - generates a slug out of the provided base string and 5 random
+    alphanumeric characters (~60M choices).
+    """
+    return base + '-' +''.join(random.SystemRandom().choice(
+        string.ascii_lowercase+string.digits) for x in xrange(5))
 
 
 @app.route('/login', methods=['GET','POST'])
@@ -239,10 +310,6 @@ def logout():
     return redirect(url_for('index'))
 
 
-
-
-
-
 #
 # Helper methods for the login functionality
 #
@@ -302,7 +369,6 @@ def verify_access_token(credentials):
         return response
 
     return None
-
 
 
 def createUser(login_session):
