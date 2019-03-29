@@ -1,11 +1,23 @@
 #!/usr/bin/python
 
-from sqlalchemy import Column, ForeignKey, Integer, String
+from sqlalchemy import Column, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy import create_engine
 
 Base = declarative_base()
+
+# User table constants
+UNAME_MAX = 32
+EMAIL_MAX = 32
+
+# Category table constants
+CAT_NAME_MAX = 32
+
+# Item table constants
+ITEM_TITLE_MAX = 32
+NUM_SLUG_CHARS = 5
+ITEM_SLUG_MAX = ITEM_TITLE_MAX + NUM_SLUG_CHARS
 
 class User(Base):
     """
@@ -18,8 +30,8 @@ class User(Base):
     __tablename__='user'
     id = Column(Integer, primary_key=True)
     # create an index on the users to speed up user search
-    uname = Column(String(32), index=True)
-    email = Column(String(32))
+    uname = Column(String(UNAME_MAX), index=True)
+    email = Column(String(EMAIL_MAX))
 
     @property
     def serialize(self):
@@ -35,7 +47,7 @@ class Category(Base):
     """
     __tablename__='category'
     id = Column(Integer, primary_key=True)
-    name = Column(String(32))
+    name = Column(String(CAT_NAME_MAX))
 
     @property
     def serialize(self):
@@ -48,6 +60,7 @@ class Category(Base):
 class Item(Base):
     """
     Item - table used to hold an instance of an item inserted into the catalog.
+    Item name uniqueness is enforced in the table.
     An item contains the following fields
         id - primary key for the items in the table.
         title - name of the item
@@ -57,22 +70,23 @@ class Item(Base):
             creator-item relationship
     """
     __tablename__='item'
-    title = Column(String(32))
+    __table_args__=tuple(UniqueConstraint('slug'))
     id = Column(Integer, primary_key=True)
+    title = Column(String(ITEM_TITLE_MAX))
     description = Column(String)
     cat_id = Column(Integer, ForeignKey('category.id'))
-    # created_by = Column(Integer, ForeignKey('user.id'))
+    slug = Column(String(ITEM_SLUG_MAX))
 
     category = relationship(Category)
-    # user = relationship(User)
 
     @property
     def serialize(self):
         return {
                 'id':self.id,
                 'title':self.title,
-                'category':self.category,
-                'created_by':self.created_by
+                'description':self.description,
+                'cat_id':self.cat_id,
+                'slug':self.slug
                 }
 
 
