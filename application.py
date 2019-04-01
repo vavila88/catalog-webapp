@@ -67,23 +67,25 @@ def show_cat_item(slug):
         return render_template('category_item.html', item=item)
     except:
         flash('Invalid item referrenced.')
-        # categories = session.query(Category).order_by(asc(Category.name))
-        # latest_items = session.query(Item).order_by(desc(Item.id)).limit(5)
         return redirect(url_for('index'))
 
 
-@app.route('/catalog/<slug>/delete')
+@app.route('/catalog/<slug>/delete', methods=['GET','POST'])
 def delete_cat_item(slug):
     if 'username' not in login_session:
         flash('You are not authorized to do that.')
-        # categories = session.query(Category).order_by(asc(Category.name))
-        # latest_items = session.query(Item).order_by(desc(Item.id)).limit(5)
         return redirect(url_for('index'))
 
-    return 'TODO: display the delete conf page with the following info:\n'\
-        '\t- Page header including log-in/out button\n'\
-        '\t- Item deletion confirmation message\n'\
-        '\t- Item deletion confirmation button\n'\
+    if request.method == 'GET':
+        item = session.query(Item).filter_by(slug=slug).one()
+        return render_template('delete_category_item.html', item=item)
+    elif request.method =='POST':
+        item = session.query(Item).filter_by(slug=slug).one()
+        session.delete(item)
+        session.commit()
+        flash('Item %s successfully deleted from the catalog'%item.title)
+        return redirect(url_for('index'))
+
 
 
 @app.route('/catalog/<slug>/edit', methods=['GET','POST'])
