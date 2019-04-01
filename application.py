@@ -40,6 +40,9 @@ CLIENT_ID = \
 @app.route('/')
 @app.route('/catalog')
 def index():
+    """
+    index - serves up the landing page for this application
+    """
     category_list = session.query(Category).order_by(asc(Category.name))
     latest_items = session.query(Item).order_by(desc(Item.id)).limit(5).all()
     # print('items:')
@@ -49,16 +52,24 @@ def index():
         items=latest_items)
 
 
-@app.route('/catalog/<category>/item')
-def show_all_cat_items(category):
-    category = session.query(Category).filter_by(name=category).one()
+@app.route('/catalog/<cat_slug>/item')
+def show_all_cat_items(cat_slug):
+    """
+    show_all_cat_items - displays all items in the category spefied by the slug
+    """
+    try:
+        category = session.query(Category).filter_by(slug=cat_slug).one()
+    except:
+        flash('Error fulfilling request.')
+        return redirect(url_for('index'))
+
     items = session.query(Item).filter_by(cat_id=category.id).all()
 
     return render_template('category.html', items=items, category=category)
 
 
-@app.route('/catalog/<category>/delete', methods=['GET','POST'])
-def delete_cat(category):
+@app.route('/catalog/<cat_slug>/delete', methods=['GET','POST'])
+def delete_cat(cat_slug):
     """
     delete_cat - delete the specified category. This will also delete all
     associated items in the database
@@ -68,9 +79,19 @@ def delete_cat(category):
         return redirect(url_for('index'))
 
     if request.method == 'GET':
-        return render_template('delete_category.html', category=category)
+        try:
+            category = session.query(Category).filter_by(slug=cat_slug).one()
+            return render_template('delete_category.html', category=category)
+        except:
+            flash('Error fulfilling request.')
+            return redirect(url_for('index'))
+
     else:
-        category = session.query(Category).filter_by(name=category).one()
+        try:
+            category = session.query(Category).filter_by(slug=cat_slug).one()
+        except:
+            flash('Error fulfilling request.')
+            return redirect(url_for('index'))
         items = session.query(Item).filter_by(cat_id=category.id).all()
 
         for i in items:
@@ -85,46 +106,56 @@ def delete_cat(category):
 
 
 
-@app.route('/catalog/item/<slug>')
-def show_cat_item(slug):
+@app.route('/catalog/item/<item_slug>')
+def show_cat_item(item_slug):
     """
     show_cat_item - display the item selected via a unique slug. The slug
     contains in it the category that the item rests under, so adding the
     category to the URI seems worthless.
     """
     try:
-        item = session.query(Item).filter_by(slug=slug).one()
+        item = session.query(Item).filter_by(slug=item_slug).one()
         cat = session.query(Category).filter_by(id=item.cat_id).one()
         return render_template('category_item.html', item=item)
-    except:
+    except Exception, e:
         flash('Invalid item referrenced.')
         return redirect(url_for('index'))
 
 
-@app.route('/catalog/item/<slug>/delete', methods=['GET','POST'])
-def delete_cat_item(slug):
+@app.route('/catalog/item/<item_slug>/delete', methods=['GET','POST'])
+def delete_cat_item(item_slug):
+    """
+    delete_cat_item - deletes the item speficied by the slug
+    """
     if 'username' not in login_session:
         flash('You are not authorized to do that.')
         return redirect(url_for('index'))
 
     if request.method == 'GET':
-        item = session.query(Item).filter_by(slug=slug).one()
-        return render_template('delete_category_item.html', item=item)
+        try:
+            item = session.query(Item).filter_by(slug=item_slug).one()
+            return render_template('delete_category_item.html', item=item)
+        except:
+            flash('Error fulfilling request.')
+            return redirect(url_for('index'))
     elif request.method =='POST':
-        item = session.query(Item).filter_by(slug=slug).one()
+        try:
+            item = session.query(Item).filter_by(slug=item_slug).one()
+        except:
+            flash('Error fulfilling request.')
+            return redirect(url_for('index'))
         session.delete(item)
         session.commit()
-        flash('Item %s successfully deleted from the catalog'%item.title)
+        flash('Item %s successfully deleted from the catalog.'%item.title)
         return redirect(url_for('index'))
 
 
 
-@app.route('/catalog/item/<slug>/edit', methods=['GET','POST'])
-def edit_cat_item(slug):
+@app.route('/catalog/item/<item_slug>/edit', methods=['GET','POST'])
+def edit_cat_item(item_slug):
     """
     edit_cat_item - edit the item specified by the slug
     """
-
     if 'username' not in login_session:
         flash('You are not authorized to do that.')
         # categories = session.query(Category).order_by(asc(Category.name))
@@ -132,25 +163,37 @@ def edit_cat_item(slug):
         return redirect(url_for('index'))
 
     if request.method == 'GET':
-        item = session.query(Item).filter_by(slug=slug).one()
-        category = session.query(Category).filter_by(id=item.cat_id).one()
-        return render_template('edit_category_item.html', item=item,
-                category=category)
+        try:
+            item = session.query(Item).filter_by(slug=item_slug).one()
+            category = session.query(Category).filter_by(id=item.cat_id).one()
+            return render_template('edit_category_item.html', item=item,
+                    category=category)
+        except:
+            flash('Error fulfilling request.')
+            return redirect(url_for('index'))
     elif request.method == 'POST':
         for x in request.form:
             print('%s : %s'%(x,request.form[x]))
 
-        item = session.query(Item).filter_by(slug=slug).one()
+        try:
+            item = session.query(Item).filter_by(slug=item_slug).one()
+        except:
+            flash('Error fulfilling request.')
+            return redirect(url_for('index'))
 
         item.title = request.form['title']
         item.description = request.form['description']
         # if the edit contains a category change, update the relevant fields in
         # the item
         if 'category_select' in request.form:
-            cat = session.query(Category).filter_by(name=
-                    request.form['category_select']).one()
+            try:
+                cat = session.query(Category).filter_by(name=
+                        request.form['category_select']).one()
+            except:
+                flash('Error fulfilling request.')
+                return redirect(url_for('index'))
             item.description = request.form['description']
-            item.slug = gen_item_slug(request.form['category_select'])
+            item.slug = gen_item_slug(cat.slug)
             item.cat_id = cat.id
 
             session.add(item)
@@ -181,14 +224,18 @@ def new_item():
         # to determine if a new category was requested to be added. Also check
         # for duplicate categories.
 
+        for k in request.form:
+            print(request.form[k])
         # extract the form data
-        item_cat = (request.form['category_select'])
+        item_cat = ''
+        if 'category_select' in request.form:
+            item_cat = (request.form['category_select'])
         item_title = (request.form['title'])
         item_desc = (request.form['description'])
 
         try:
             try:
-                print('Attemtpting to retrieve the specified category')
+                print('Retrieving the specified category - %s' % item_cat)
                 category = session.query(Category).filter_by(name=item_cat).one()
             except:
                 new_cat_name = str(request.form['new_cat_title'])
@@ -198,10 +245,14 @@ def new_item():
                 session.add(new_category)
                 session.commit()
 
-                category = session.query(Category).filter_by(name=new_cat_name).\
-                        one()
+                try:
+                    category = session.query(Category).filter_by(name=new_cat_name).\
+                            one()
+                except:
+                    flash('Error fulfilling request.')
+                    return redirect(url_for('index'))
 
-            item_slug = gen_item_slug(category.name)
+            item_slug = gen_item_slug(category.slug)
             print('Creating a new item with name - {}, cat_id - {}, desc -'\
                     '"{}", slug - {}'.format(item_title, item_desc, \
                         category.id, item_slug))
@@ -216,7 +267,7 @@ def new_item():
             # latest_items = session.query(Item).order_by(desc(Item.id)).limit(5)
             return redirect(url_for('index'))
         except:
-            flash('Unable to add duplicate item to the database: %s' %
+            flash('Unable to add duplicate item to the database: %s.' %
                     item_title)
             # categories = session.query(Category).order_by(asc(Category.name))
             # latest_items = session.query(Item).order_by(desc(Item.id)).limit(5)
@@ -236,7 +287,7 @@ def gen_cat_slug(base):
 def gen_item_slug(base):
     """
     gen_item_slug - generates a slug out of the provided base string and 5 random
-    alphanumeric characters (~60M choices).
+    alphanumeric characters.
     """
     return base + '-' +''.join(random.SystemRandom().choice(
         string.ascii_lowercase+string.digits) for x in xrange(5))
@@ -244,6 +295,13 @@ def gen_item_slug(base):
 
 @app.route('/login', methods=['GET','POST'])
 def login():
+    """
+    login - login handler used to retrieve google OAuth credentials
+    """
+    # prevent re-login if already logged in
+    if 'username' in login_session:
+        return redirect(url_for('index'))
+
     # handle GET requests to this endpoint
     if request.method == 'GET':
         if 'username' in login_session:
@@ -344,20 +402,21 @@ def login():
         #     'border-radius:150px;-webkit-border-radius: '\
         #     '150px;-moz-border-radius:150px;">'
 
-        flash('You are now logged in as %s'%login_session['username'])
+        flash('You are now logged in as %s.'%login_session['username'])
         return output
 
 
 @app.route('/logout')
 def logout():
+    """
+    logout - log a user out
+    """
     # get the stored access token
     try:
         access_token = login_session['access_token']
     except KeyError:
-        response = make_response(json.dumps(
-            'User logout error'), 401)
-        response.headers['Content-Type'] = 'application/json'
-        return response
+        flash('No User currently logged in.')
+        return redirect(url_for('index'))
 
     # if there wasn't one presently, send a server error response
     if access_token is None:
@@ -509,35 +568,46 @@ def categories_json():
     categories_json - returns a JSON representation of all the categories in the
     DB
     """
-    category_list = session.query(Category).order_by(asc(Category.name))
+    try:
+        category_list = session.query(Category).order_by(asc(Category.name))
+        return jsonify(Category = [c.serialize for c in category_list])
+    except:
+        flash('Error fulfilling request.')
+        return redirect(url_for('index'))
 
-    return jsonify(Category = [c.serialize for c in category_list])
 
-
-@app.route('/api/v1/catalog/<category>/item/JSON')
-def cat_items_json(category):
+@app.route('/api/v1/catalog/category/<cat_slug>/JSON')
+def cat_items_json(cat_slug):
     """
     cat_items_json - returns a JSON representation of all the items in a given
     category in the DB
     """
-    category = session.query(Category).filter_by(name=category).one()
-    items = session.query(Item).filter_by(cat_id=category.id).all()
+    try:
+        category = session.query(Category).filter_by(slug=cat_slug).one()
+        items = session.query(Item).filter_by(cat_id=category.id).all()
 
-    ret = {}
-    ret['Category'] = (category.serialize)
-    ret['Items'] = [i.serialize for i in items]
+        ret = {}
+        ret['Category'] = (category.serialize)
+        ret['Items'] = [i.serialize for i in items]
 
-    return jsonify(ret)
+        return jsonify(ret)
+    except:
+        flash('Error fulfilling request.')
+        return redirect(url_for('index'))
 
 
-@app.route('/api/v1/catalog/item/<slug>/JSON')
-def item_json(slug):
+@app.route('/api/v1/catalog/item/<item_slug>/JSON')
+def item_json(item_slug):
     """
     item_json - returns a JSON representation of the item with the given slug
     stored in the DB
     """
-    item = session.query(Item).filter_by(slug=slug).one()
-    return jsonify(Item=item.serialize)
+    try:
+        item = session.query(Item).filter_by(slug=slug).one()
+        return jsonify(Item=item.serialize)
+    except:
+        flash('Error fulfilling request.')
+        return redirect(url_for('index'))
 
 
 if __name__ == '__main__':
