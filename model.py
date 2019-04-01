@@ -5,8 +5,6 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy import create_engine
 
-Base = declarative_base()
-
 # User table constants
 UNAME_MAX = 32
 EMAIL_MAX = 32
@@ -19,6 +17,8 @@ ITEM_TITLE_MAX = 32
 NUM_SLUG_CHARS = 5
 ITEM_SLUG_MAX = ITEM_TITLE_MAX + NUM_SLUG_CHARS
 
+Base = declarative_base()
+
 class User(Base):
     """
     User - table used to store all registered users of this web app.
@@ -30,8 +30,9 @@ class User(Base):
     __tablename__='user'
     id = Column(Integer, primary_key=True)
     # create an index on the users to speed up user search
-    uname = Column(String(UNAME_MAX), index=True)
-    email = Column(String(EMAIL_MAX))
+    uname = Column(String(UNAME_MAX))
+    email = Column(String(EMAIL_MAX), index=True)
+    picture = Column(String)
 
     @property
     def serialize(self):
