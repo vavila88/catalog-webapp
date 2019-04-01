@@ -22,7 +22,7 @@ function showCategoryOptions() {
     // the category selection code.
     if ($("div#edit-category").length) {
         $.ajax({
-            url : "/api/v1/catalog/categories/JSON",
+            url : "/api/v1/catalog/category/JSON",
             type : "GET",
             dataType : "json",
         }).done(function(result) {
