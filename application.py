@@ -568,12 +568,8 @@ def categories_json():
     categories_json - returns a JSON representation of all the categories in the
     DB
     """
-    try:
-        category_list = session.query(Category).order_by(asc(Category.name))
-        return jsonify(Category = [c.serialize for c in category_list])
-    except:
-        flash('Error fulfilling request.')
-        return redirect(url_for('index'))
+    category_list = session.query(Category).order_by(asc(Category.name))
+    return jsonify(Category = [c.serialize for c in category_list])
 
 
 @app.route('/api/v1/catalog/category/<cat_slug>/JSON')
@@ -588,7 +584,7 @@ def cat_items_json(cat_slug):
 
         ret = {}
         ret['Category'] = (category.serialize)
-        ret['Items'] = [i.serialize for i in items]
+        ret['Category']['Items'] = [i.serialize for i in items]
 
         return jsonify(ret)
     except:
