@@ -11,11 +11,11 @@
         {% if 'username' in session %}
         <a href="{{url_for('new_item')}}">Add Item</a>
         </br>
-        <a href="{{url_for('delete_cat', category=category.name)}}">Delete Category</a>
+        <a href="{{url_for('delete_cat', cat_slug=category.slug)}}">Delete Category</a>
         {% endif %}
         <h1>Items</h1>
         {% for i in items %}
-        <a href="{{url_for('show_cat_item', slug=i.slug)}}">{{i.title}}
+        <a href="{{url_for('show_cat_item', item_slug=i.slug)}}">{{i.title}}
         </a>
         {% endfor %}
     </section>
