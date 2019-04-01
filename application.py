@@ -49,12 +49,43 @@ def index():
         items=latest_items)
 
 
-@app.route('/catalog/<category>/items')
+@app.route('/catalog/<category>/item')
 def show_all_cat_items(category):
-    return 'Show all items in the %s category' %category
+    category = session.query(Category).filter_by(name=category).one()
+    items = session.query(Item).filter_by(cat_id=category.id).all()
+
+    return render_template('category.html', items=items, category=category)
 
 
-@app.route('/catalog/<slug>')
+@app.route('/catalog/<category>/delete', methods=['GET','POST'])
+def delete_cat(category):
+    """
+    delete_cat - delete the specified category. This will also delete all
+    associated items in the database
+    """
+    if 'username' not in login_session:
+        flash('You are not authorized to do that.')
+        return redirect(url_for('index'))
+
+    if request.method == 'GET':
+        return render_template('delete_category.html', category=category)
+    else:
+        category = session.query(Category).filter_by(name=category).one()
+        items = session.query(Item).filter_by(cat_id=category.id).all()
+
+        for i in items:
+            session.delete(i)
+            session.commit
+
+        session.delete(category)
+        session.commit
+
+        flash('Category "%s": and associated items deleted.' % category.name)
+        return redirect(url_for('index'))
+
+
+
+@app.route('/catalog/item/<slug>')
 def show_cat_item(slug):
     """
     show_cat_item - display the item selected via a unique slug. The slug
@@ -70,7 +101,7 @@ def show_cat_item(slug):
         return redirect(url_for('index'))
 
 
-@app.route('/catalog/<slug>/delete', methods=['GET','POST'])
+@app.route('/catalog/item/<slug>/delete', methods=['GET','POST'])
 def delete_cat_item(slug):
     if 'username' not in login_session:
         flash('You are not authorized to do that.')
@@ -88,7 +119,7 @@ def delete_cat_item(slug):
 
 
 
-@app.route('/catalog/<slug>/edit', methods=['GET','POST'])
+@app.route('/catalog/item/<slug>/edit', methods=['GET','POST'])
 def edit_cat_item(slug):
     """
     edit_cat_item - edit the item specified by the slug
@@ -131,7 +162,7 @@ def edit_cat_item(slug):
 
 
 
-@app.route('/catalog/new', methods=['GET','POST'])
+@app.route('/catalog/item/new', methods=['GET','POST'])
 def new_item():
     """
     new_item - Function that creates a new item. This function also creates a
@@ -159,7 +190,7 @@ def new_item():
 
         try:
             try:
-                print('Attemtpting to retrieve the specified catgeory')
+                print('Attemtpting to retrieve the specified category')
                 category = session.query(Category).filter_by(name=item_cat).one()
             except:
                 new_cat_name = str(request.form['new_cat_title'])
@@ -447,7 +478,7 @@ def getUserId(email):
 @app.route('/api/v1/catalog/JSON')
 def catalog_json():
     """
-    catalog_json - REST API endpoint that returns the contents of the catalog
+    catalog_json - API endpoint that returns the contents of the catalog
     database as a JSON object.
     """
     # empty list to hold the contents of the catalog
@@ -459,11 +490,11 @@ def catalog_json():
         ret.append(c.serialize)
         # once we have the items, serialize them and add them to the dict.
         items = session.query(Item).filter_by(cat_id=c.id)
-        ret[-1]['Item']= [i.serialize for i in items]
+        ret[-1]['Items']= [i.serialize for i in items]
     return jsonify(Category = ret), 200
 
 
-@app.route('/api/v1/catalog/categories/JSON')
+@app.route('/api/v1/catalog/category/JSON')
 def categories_json():
     """
     categories_json - returns a JSON representation of all the categories in the
@@ -472,6 +503,32 @@ def categories_json():
     category_list = session.query(Category).order_by(asc(Category.name))
 
     return jsonify(Category = [c.serialize for c in category_list])
+
+
+@app.route('/api/v1/catalog/<category>/item/JSON')
+def cat_items_json(category):
+    """
+    cat_items_json - returns a JSON representation of all the items in a given
+    category in the DB
+    """
+    category = session.query(Category).filter_by(name=category).one()
+    items = session.query(Item).filter_by(cat_id=category.id).all()
+
+    ret = {}
+    ret['Category'] = (category.serialize)
+    ret['Items'] = [i.serialize for i in items]
+
+    return jsonify(ret)
+
+
+@app.route('/api/v1/catalog/item/<slug>/JSON')
+def item_json(slug):
+    """
+    item_json - returns a JSON representation of the item with the given slug
+    stored in the DB
+    """
+    item = session.query(Item).filter_by(slug=slug).one()
+    return jsonify(Item=item.serialize)
 
 
 if __name__ == '__main__':
