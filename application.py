@@ -150,7 +150,7 @@ def edit_cat_item(slug):
             cat = session.query(Category).filter_by(name=
                     request.form['category_select']).one()
             item.description = request.form['description']
-            item.slug = gen_slug(request.form['category_select'])
+            item.slug = gen_item_slug(request.form['category_select'])
             item.cat_id = cat.id
 
             session.add(item)
@@ -177,11 +177,9 @@ def new_item():
                 category_list=category_list)
     elif request.method == 'POST':
         # the data from the text fields are stored in the request.form dict
-        # print(request.form)
         # the name of the select element, use this along with the form elements
         # to determine if a new category was requested to be added. Also check
         # for duplicate categories.
-        # print(request.form.get('category_select'))
 
         # extract the form data
         item_cat = (request.form['category_select'])
@@ -195,14 +193,15 @@ def new_item():
             except:
                 new_cat_name = str(request.form['new_cat_title'])
                 print('Create a new category with name - {}'.format(new_cat_name))
-                new_category = Category(name=new_cat_name)
+                new_category = Category(name=new_cat_name,
+                        slug=gen_cat_slug(new_cat_name))
                 session.add(new_category)
                 session.commit()
 
                 category = session.query(Category).filter_by(name=new_cat_name).\
                         one()
 
-            item_slug = gen_slug(category.name)
+            item_slug = gen_item_slug(category.name)
             print('Creating a new item with name - {}, cat_id - {}, desc -'\
                     '"{}", slug - {}'.format(item_title, item_desc, \
                         category.id, item_slug))
@@ -224,9 +223,19 @@ def new_item():
             return redirect(url_for('index'))
 
 
-def gen_slug(base):
+def gen_cat_slug(base):
     """
-    gen_slug- generates a slug out of the provided base string and 5 random
+    gen_cat_slug - Generates a slug for a category, namely, converts to all
+    lowercase and replaces ' ' with '-'
+    """
+    ret = base.lower().replace(' ','-')
+    print('slug for category %s - %s' %(base, ret))
+    return ret
+
+
+def gen_item_slug(base):
+    """
+    gen_item_slug - generates a slug out of the provided base string and 5 random
     alphanumeric characters (~60M choices).
     """
     return base + '-' +''.join(random.SystemRandom().choice(
