@@ -18,8 +18,8 @@
     <section class="row padding-top col-md-8 padding-bottom">
         <h1>Item Categories</h1>
         <section class="row padding-top col-md-8 padding-bottom">
-        {% for cat in categories %}
-        <a href="#">{{cat.name}}</a>
+        {% for cat in category_list %}
+        <a href="{{url_for('show_all_cat_items', category=cat.name)}}">{{cat.name}}</a>
         {% endfor %}
         </section>
     </section>
@@ -31,8 +31,9 @@
         {% endif %}
         <h1>Latest Additions</h1>
         {% for i in items %}
+        <div class="category-item">
         <a href="{{ url_for('show_cat_item', slug = i.slug) }}">{{ i.title }}</a>
-        <a href="#">{{ i.name }}</a>
+        </div>
         {% endfor %}
     </section>
 </section>
