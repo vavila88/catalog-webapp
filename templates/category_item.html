@@ -16,8 +16,10 @@
 </div>
 <section class="row banner main col-md-4 padding-bottom">
     <article class="row padding-top col-md-8 padding-bottom">
-        <h1>{{item.name}}</h1>
+        <h1>{{item.title}}</h1>
         <section>{{item.description}}</section>
+        {% if 'username' in session %}
+        </br>
 		<div class="col-md-11 padding-none">
 			<a href="{{url_for('edit_cat_item', slug=item.slug) }}">
 				<button class="btn btn-default" id="edit-catalog-item">
@@ -32,6 +34,7 @@
                 </button>
 			</a>
 		</div>
+        {% endif %}
     </article>
 </section>
 {% endblock %}
