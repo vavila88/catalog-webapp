@@ -49,12 +49,14 @@ class Category(Base):
     __tablename__='category'
     id = Column(Integer, primary_key=True)
     name = Column(String(CAT_NAME_MAX))
+    slug = Column(String)
 
     @property
     def serialize(self):
         return {
-                'id':self.id,
+                'slug':self.slug,
                 'name':self.name,
+                'id':self.id,
                 }
 
 
