@@ -40,53 +40,93 @@ CLIENT_ID = \
 @app.route('/')
 @app.route('/catalog')
 def index():
-    categories = session.query(Category).order_by(asc(Category.name))
+    category_list = session.query(Category).order_by(asc(Category.name))
     latest_items = session.query(Item).order_by(desc(Item.id)).limit(5).all()
-    print('items:')
-    for i in latest_items:
-        print(i.slug)
-    return render_template('catalog.html', categories=categories, items=latest_items)
+    # print('items:')
+    # for i in latest_items:
+    #     print(i.slug)
+    return render_template('catalog.html', category_list=category_list,
+        items=latest_items)
 
 
 @app.route('/catalog/<category>/items')
 def show_all_cat_items(category):
-    return 'TODO: display the page with the following info:\n'\
-        '\t- Page header including log-in/out button\n'\
-        '\t- List of categories\n'\
-        '\t- List of all items in this category\n'\
-        '\t- if the use is logged in, show an option to add an item\n'
+    return 'Show all items in the %s category' %category
 
 
 @app.route('/catalog/<slug>')
 def show_cat_item(slug):
     """
+    show_cat_item - display the item selected via a unique slug. The slug
+    contains in it the category that the item rests under, so adding the
+    category to the URI seems worthless.
     """
-    item = session.query(Item).filter_by(id=item).one()
-    cat = session.query(Category).filter_by(id=item.cat_id).one()
-    return 'TODO: display the page with the following info:\n'\
-        '\t- Page header including log-in/out button\n'\
-        '\t- Item name as a heading and item description\n'\
-        '\t- if the use is logged in, show an option to edit/delete the item\n'
+    try:
+        item = session.query(Item).filter_by(slug=slug).one()
+        cat = session.query(Category).filter_by(id=item.cat_id).one()
+        return render_template('category_item.html', item=item)
+    except:
+        flash('Invalid item referrenced.')
+        # categories = session.query(Category).order_by(asc(Category.name))
+        # latest_items = session.query(Item).order_by(desc(Item.id)).limit(5)
+        return redirect(url_for('index'))
 
 
 @app.route('/catalog/<slug>/delete')
 def delete_cat_item(slug):
+    if 'username' not in login_session:
+        flash('You are not authorized to do that.')
+        # categories = session.query(Category).order_by(asc(Category.name))
+        # latest_items = session.query(Item).order_by(desc(Item.id)).limit(5)
+        return redirect(url_for('index'))
+
     return 'TODO: display the delete conf page with the following info:\n'\
         '\t- Page header including log-in/out button\n'\
         '\t- Item deletion confirmation message\n'\
         '\t- Item deletion confirmation button\n'\
 
 
-@app.route('/catalog/<slug>/edit')
+@app.route('/catalog/<slug>/edit', methods=['GET','POST'])
 def edit_cat_item(slug):
-    return 'TODO: display the edit page with the following info:\n'\
-        '\t- Page header including log-in/out button\n'\
-        '\t- Edit header\n'\
-        '\t- Title(name) input field for the title of item\n'\
-        '\t- Description input field\n'\
-        '\t- Category dropdown with all available categories\n'\
-        '\t\tNOTE: This field should also contain an "other" option where '\
-        'you can specify a new category\n'\
+    """
+    edit_cat_item - edit the item specified by the slug
+    """
+
+    if 'username' not in login_session:
+        flash('You are not authorized to do that.')
+        # categories = session.query(Category).order_by(asc(Category.name))
+        # latest_items = session.query(Item).order_by(desc(Item.id)).limit(5)
+        return redirect(url_for('index'))
+
+    if request.method == 'GET':
+        item = session.query(Item).filter_by(slug=slug).one()
+        category = session.query(Category).filter_by(id=item.cat_id).one()
+        return render_template('edit_category_item.html', item=item,
+                category=category)
+    elif request.method == 'POST':
+        for x in request.form:
+            print('%s : %s'%(x,request.form[x]))
+
+        item = session.query(Item).filter_by(slug=slug).one()
+
+        item.title = request.form['title']
+        item.description = request.form['description']
+        # if the edit contains a category change, update the relevant fields in
+        # the item
+        if 'category_select' in request.form:
+            cat = session.query(Category).filter_by(name=
+                    request.form['category_select']).one()
+            item.description = request.form['description']
+            item.slug = gen_slug(request.form['category_select'])
+            item.cat_id = cat.id
+
+            session.add(item)
+            session.commit()
+
+        # categories = session.query(Category).order_by(asc(Category.name))
+        # latest_items = session.query(Item).order_by(desc(Item.id)).limit(5)
+        return redirect(url_for('index'))
+
 
 
 @app.route('/catalog/new', methods=['GET','POST'])
@@ -104,19 +144,17 @@ def new_item():
                 category_list=category_list)
     elif request.method == 'POST':
         # the data from the text fields are stored in the request.form dict
-        print(request.form)
+        # print(request.form)
         # the name of the select element, use this along with the form elements
         # to determine if a new category was requested to be added. Also check
         # for duplicate categories.
-        print(request.form.get('category_select'))
+        # print(request.form.get('category_select'))
 
         # extract the form data
         item_cat = (request.form['category_select'])
         item_title = (request.form['title'])
         item_desc = (request.form['description'])
 
-        # cases when adding a new item:
-        # 1 - Category exists, get the cat and add the item to Item table
         try:
             try:
                 print('Attemtpting to retrieve the specified catgeory')
@@ -131,35 +169,31 @@ def new_item():
                 category = session.query(Category).filter_by(name=new_cat_name).\
                         one()
 
-            item_slug = get_slug(category.name)
+            item_slug = gen_slug(category.name)
             print('Creating a new item with name - {}, cat_id - {}, desc -'\
                     '"{}", slug - {}'.format(item_title, item_desc, \
                         category.id, item_slug))
+
             newItem = Item(title=item_title, description=item_desc,
                 cat_id=category.id, slug=item_slug)
+
             session.add(newItem)
             session.commit()
 
-
-            # 2 - New cat specified, validate input and proceed
-            #   a - if the new cat doesn't exist, add it
-            #   b - if the new cat already exists, just add the item to the existing
-            #   cat
-
-            categories = session.query(Category).order_by(asc(Category.name))
-            latest_items = session.query(Item).order_by(desc(Item.id)).limit(5)
+            # categories = session.query(Category).order_by(asc(Category.name))
+            # latest_items = session.query(Item).order_by(desc(Item.id)).limit(5)
             return redirect(url_for('index'))
         except:
             flash('Unable to add duplicate item to the database: %s' %
                     item_title)
-            categories = session.query(Category).order_by(asc(Category.name))
-            latest_items = session.query(Item).order_by(desc(Item.id)).limit(5)
+            # categories = session.query(Category).order_by(asc(Category.name))
+            # latest_items = session.query(Item).order_by(desc(Item.id)).limit(5)
             return redirect(url_for('index'))
 
 
-def get_slug(base):
+def gen_slug(base):
     """
-    get_slug - generates a slug out of the provided base string and 5 random
+    gen_slug- generates a slug out of the provided base string and 5 random
     alphanumeric characters (~60M choices).
     """
     return base + '-' +''.join(random.SystemRandom().choice(
@@ -241,8 +275,7 @@ def login():
         data = answer.json()
 
         login_session['username'] = data['name']
-        # Not sure if supporting user pictures adds any value.
-        # login_session['picture'] = data['picture']
+        login_session['picture'] = data['picture']
         login_session['email'] = data['email']
 
         # Check to see if a user exists, if so, don't make a new one.
@@ -404,10 +437,12 @@ def getUserId(email):
         return None
 
 
-#
+######################
 # JSON endpoints
-#
-@app.route('/catalog.json')
+######################
+
+
+@app.route('/api/v1/catalog/JSON')
 def catalog_json():
     """
     catalog_json - REST API endpoint that returns the contents of the catalog
@@ -421,9 +456,21 @@ def catalog_json():
     for c in cats:
         ret.append(c.serialize)
         # once we have the items, serialize them and add them to the dict.
-        items = session.query(Item).join(Item.category)
+        items = session.query(Item).filter_by(cat_id=c.id)
         ret[-1]['Item']= [i.serialize for i in items]
-    return jsonify(Category = ret)
+    return jsonify(Category = ret), 200
+
+
+@app.route('/api/v1/catalog/categories/JSON')
+def categories_json():
+    """
+    categories_json - returns a JSON representation of all the categories in the
+    DB
+    """
+    category_list = session.query(Category).order_by(asc(Category.name))
+
+    return jsonify(Category = [c.serialize for c in category_list])
+
 
 if __name__ == '__main__':
   app.secret_key = 'super_secret_key'
