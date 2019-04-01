@@ -19,6 +19,7 @@ ITEM_SLUG_MAX = ITEM_TITLE_MAX + NUM_SLUG_CHARS
 
 Base = declarative_base()
 
+
 class User(Base):
     """
     User - table used to store all registered users of this web app.
@@ -27,7 +28,7 @@ class User(Base):
         uname - the users name
         email - the email registered to this user
     """
-    __tablename__='user'
+    __tablename__ = 'user'
     id = Column(Integer, primary_key=True)
     # create an index on the users to speed up user search
     uname = Column(String(UNAME_MAX))
@@ -37,16 +38,16 @@ class User(Base):
     @property
     def serialize(self):
         return {
-                'id':self.id,
-                'uname':self.uname,
-                'email':self.email,
+                'id': self.id,
+                'uname': self.uname,
+                'email': self.email,
                 }
 
 
 class Category(Base):
     """
     """
-    __tablename__='category'
+    __tablename__ = 'category'
     id = Column(Integer, primary_key=True)
     name = Column(String(CAT_NAME_MAX))
     slug = Column(String)
@@ -54,9 +55,9 @@ class Category(Base):
     @property
     def serialize(self):
         return {
-                'slug':self.slug,
-                'name':self.name,
-                'id':self.id,
+                'slug': self.slug,
+                'name': self.name,
+                'id': self.id,
                 }
 
 
@@ -72,8 +73,8 @@ class Item(Base):
         created_by - a reference to an entry in the User table establishing a
             creator-item relationship
     """
-    __tablename__='item'
-    __table_args__=tuple(UniqueConstraint('slug'))
+    __tablename__ = 'item'
+    __table_args__ = tuple(UniqueConstraint('slug'))
     id = Column(Integer, primary_key=True)
     title = Column(String(ITEM_TITLE_MAX))
     description = Column(String)
@@ -85,15 +86,14 @@ class Item(Base):
     @property
     def serialize(self):
         return {
-                'id':self.id,
-                'title':self.title,
-                'description':self.description,
-                'cat_id':self.cat_id,
-                'slug':self.slug
+                'id': self.id,
+                'title': self.title,
+                'description': self.description,
+                'cat_id': self.cat_id,
+                'slug': self.slug
                 }
 
 
 engine = create_engine('sqlite:///catalog.db')
 # This line actually creates the database on disk from the definitions above.
 Base.metadata.create_all(engine)
-
