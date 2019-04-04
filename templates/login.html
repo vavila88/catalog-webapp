@@ -1,6 +1,5 @@
 <html>
     <head>
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
         <script src="https://apis.google.com/js/client:platform.js?onload=start" async defer></script>
         <script>
             function start() {
@@ -22,6 +21,9 @@
         <button id="signinButton">Sign in with Google</button>
         <div id="result"></div>
         <script>
+            // Since this is in an iframe now, we have to use the parent's
+            // jquery instance
+            $ = parent.$
             $('#signinButton').click(function() {
                 function signInCallback(authResult){
                     if (authResult['code']) {

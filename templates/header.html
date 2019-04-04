@@ -1,4 +1,3 @@
-{% extends "index.html" %}
 {% block header %}
 <div class="row top-menu">
 	<div class="col-md-3 text-left">
@@ -10,6 +9,28 @@
         </section>
 	</div>
 	<div class="col-md-3 text-right">
+        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#loginModal">Launch demo modal</button>
+        <!-- login modal -->
+        <div class="modal fade" id="loginModal" tabindex="-1" role="dialog"
+            aria-labelledby="login-modal-label" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="exampleModalLabel">Login</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <iframe src='/login'></iframe>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary">Save changes</button>
+                    </div>
+                </div>
+            </div>
+        </div>
         {% if 'username' not in session %}
         <a href="{{url_for('login')}}">Login</a>
         {% else %}
