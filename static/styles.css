@@ -2,7 +2,17 @@ div.btn-right {
 	margin-top: 10px;
 	margin-right: 10px;
 }
+
 div.btn-left {
 	margin-top: 10px;
 	margin-left: 10px;
 }
+
+a.btn-link{
+    color:#fff;
+}
+
+i {
+    color: #808080;
+}
+
