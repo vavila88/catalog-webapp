@@ -1,40 +1,34 @@
 {% block header %}
 <div class="row top-menu">
 	<div class="col-md-3 text-left">
-        <a href="{{url_for('index')}}">home</a>
+        <div class="btn-left">
+            <a class="btn-link" href="{{url_for('index')}}">
+                <button type="button" class="btn btn-dark">Home
+                </button>
+            </a>
+        </div>
 	</div>
 	<div class="col-md-6 text-center">
         <section>
             <h1>Item Catalog</h1>
         </section>
 	</div>
+    <!-- login modal -->
 	<div class="col-md-3 text-right">
-        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#loginModal">Launch demo modal</button>
-        <!-- login modal -->
-        <div class="modal fade" id="loginModal" tabindex="-1" role="dialog"
-            aria-labelledby="login-modal-label" aria-hidden="true">
-            <div class="modal-dialog" role="document">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="exampleModalLabel">Login</h5>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
-                    <div class="modal-body">
-                        <iframe src='/login'></iframe>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                        <button type="button" class="btn btn-primary">Save changes</button>
-                    </div>
-                </div>
-            </div>
-        </div>
         {% if 'username' not in session %}
-        <a href="{{url_for('login')}}">Login</a>
+        <div class="btn-right">
+            <a class="btn-link" href="{{url_for('login')}}">
+                <button type="button" class="btn btn-dark">Login
+                </button>
+            </a>
+        </div>
         {% else %}
-        <a href="{{url_for('logout')}}">Logout</a>
+        <div class="btn-right">
+            <a class="btn-link" href="{{url_for('logout')}}">
+                <button type="button" class="btn btn-dark">Logout
+                </button>
+            </a>
+        </div>
         {% endif %}
 	</div>
 </div>
