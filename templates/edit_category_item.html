@@ -1,22 +1,26 @@
 {% extends "index.html" %}
 {% block content %}
-	<div class="row divider cyan">
-		<div class="col-md-12"></div>
-	</div>
-	<div class="row banner menu">
-		<div class="col-md-11 col-md-offset-1 padding-none">
-			<h1>Edit Item</h1>
-		</div>
-	</div>
-	<div class="row">
-		<div class="col-md-6 col-md-offset-1 padding-top">
-			<form action="#" method = "post" style="display:inline">
-				<div class="form-group">
-					<label for="name">Name:</label>
-					<input type ="text" maxlength="32" class="form-control" name="title" placeholder="{{item.title}}" required>
+<div class="row divider cyan">
+</div>
+<section class="row banner main col-md-12 padding-bottom ml-0 text-center">
+    <div class="col-md-3 padding-bottom"></div>
+    <div class="row banner">
+        <div class="col-md-11 col-md-offset-1 padding-none">
+            <h1>Edit Item</h1>
+        </div>
+    </div>
+    <div class="col-md-3 padding-bottom"></div>
+</section>
+<section class="row banner main col-md-12 padding-bottom ml-0 text-center">
+    <div class="col-md-2 padding-bottom"></div>
+    <div class="col-md-8 pading-bottom text-left">
+            <form action="#" method = "post" style="display:inline">
+                <div class="form-group">
+                    <label for="name">Name:</label>
+                    <input type ="text" maxlength="32" class="form-control" name="title" placeholder="{{item.title}}" required>
 
-					<label for="description">Description:</label>
-					<textarea class="form-control" maxlength="250" rows="3"
+                    <label for="description">Description:</label>
+                    <textarea class="form-control" maxlength="250" rows="3"
                                                                    name="description"
                                                                    required>{{item.description}}</textarea>
 
@@ -26,15 +30,16 @@
                     </br>
                     <div id="edit-category" style="display:none;"></div>
                     </br>
-					<button type="submit" class="btn btn-default" id="submit" type="submit">
+                    <button type="submit" class="btn btn-default" id="submit" type="submit">
                         <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>Edit</button>
-				</div>
-			</form>
+                </div>
+            </form>
             <a href = '{{url_for('show_cat_item', item_slug=item.slug)}}'>
                 <button class="btn btn-default delete">
                     <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>Cancel</button>
             </a>
-		</div>
-	</div>
+    </div>
+    <div class="col-md-2 padding-bottom"></div>
+</section>
 {% endblock %}
 
