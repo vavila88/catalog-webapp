@@ -11,27 +11,30 @@
     {% endif %}
     {% endwith %}
 </div>
-<section class="row banner main col-md-4 padding-bottom">
-    <section class="row padding-top col-md-8 padding-bottom">
+<div class="row ml-0">
+    <section class="row col-md-4 padding-bottom ml-0">
         <h1>Item Categories</h1>
-        <section class="row padding-top col-md-8 padding-bottom">
-        {% for cat in category_list %}
-        <a href="{{url_for('show_all_cat_items', cat_slug=cat.slug)}}">{{cat.name}}</a>
-        {% endfor %}
+        <section class="row col-md-8 ">
+            <div class="category-entity list-group list-group-flush">
+            {% for cat in category_list %}
+            <a class="list-group-item" href="{{url_for('show_all_cat_items', cat_slug=cat.slug)}}">{{cat.name}}</a>
+            {% endfor %}
+            </div>
         </section>
     </section>
-</section>
-<section class="row banner main col-md-4 padding-bottom">
-    <section class="row padding-top col-md-8 padding-bottom">
-        {% if 'username' in session %}
-        <a href="{{url_for('new_item')}}">Add Item</a>
-        {% endif %}
+    <section class="row col-md-8">
         <h1>Latest Additions</h1>
-        {% for i in items %}
-        <div class="category-item">
-        <a href="{{ url_for('show_cat_item', item_slug = i.slug) }}">{{ i.title }}</a>
-        </div>
-        {% endfor %}
+        <section class="row padding-top col-md-12 padding-bottom">
+            <div class="category-entity list-group list-group-flush">
+        {% if 'username' in session %}
+            <a class="list-group-item info" href="{{url_for('new_item')}}">Add Item</a>
+        {% endif %}
+            {% for i in items %}
+            <a class="list-group-item" href="{{ url_for('show_cat_item',
+            item_slug = i.slug) }}">{{i.title}} <i>({{i.category.name}})</i></a>
+            {% endfor %}
+            </div>
+        </section>
     </section>
-</section>
+</div>
 {% endblock %}
