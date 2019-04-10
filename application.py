@@ -12,18 +12,26 @@ from flask import session as login_session
 # Creates a flow object from the client secrets JSON file. This JSON stores the
 # client id, client secret, and other OAuth2 params
 from oauth2client.client import flow_from_clientsecrets
+
 # used when we run into an error when we try to exchange OTC for an auth token
 from oauth2client.client import FlowExchangeError
+
 # comprehensive http client lib from python
 import httplib2
+
 # python json lib for creation/manipulation of json data
 import json
 import random
 import string
+
 # converts the response from a function into a real http response
 from flask import make_response
+
 # similar to urllib2, but with improvements
 import requests
+
+# used to create a login check decorator
+from functools import update_wrapper
 
 app = Flask(__name__)
 
@@ -38,6 +46,45 @@ session = DBSession()
 CLIENT_ID = \
     json.loads(open('client_secret.json', 'r').read())['web']['client_id']
 
+# session timeout in seconds
+SESS_TO = 600
+
+
+def verify_login(refresh=300):
+    """
+    verify_login - decorator that checks if a user is logged in and within the
+    timeout specified. If a user is logged in the decorator will refresh their
+    timeout token. Defaults to 5 minute timeout
+    """
+    # f is the function that is being decorated
+    def decorator(f):
+        # pass the args to the decorated function into our decorator
+        def is_logged_in(*args, **kwargs):
+            print('in the decorator with timeout - %s' % refresh)
+            # check that the user is logged in to begin with
+            if 'username' not in login_session:
+                flash('You are not authorized to do that.')
+                # if there is no username in the session, there should also be
+                # no associated user data, but invalidate it anyway
+                invalidate_session()
+                return redirect(url_for('index'))
+
+            # check that the user's authentication hasn't timed-out
+            uid =  User.verify_auth_token(login_session['timeout_token'])
+            if not uid:
+                # invalidate all user data if the token has expired
+                invalidate_session()
+                flash('You have been logged out due to inactivity.')
+                return redirect(url_for('index'))
+
+            # if we made it this far all is well and we should refresh the
+            # the login token
+            login_session['timeout_token'] = \
+            get_user_info(uid).gen_auth_token(refresh)
+
+            return f(*args, **kwargs)
+        return update_wrapper(is_logged_in, f)
+    return decorator
 
 @app.route('/')
 @app.route('/catalog')
@@ -49,7 +96,7 @@ def index():
     latest_items = session.query(Item).order_by(desc(Item.id)).limit(5).all()
     # print('items:')
     # for i in latest_items:
-    #     print(i.slug)
+    #     print(i.category.name)
     return render_template('catalog.html', category_list=category_list,
                            items=latest_items)
 
@@ -71,15 +118,12 @@ def show_all_cat_items(cat_slug):
 
 
 @app.route('/catalog/<cat_slug>/delete', methods=['GET', 'POST'])
+@verify_login(refresh=SESS_TO)
 def delete_cat(cat_slug):
     """
     delete_cat - delete the specified category. This will also delete all
     associated items in the database
     """
-    if 'username' not in login_session:
-        flash('You are not authorized to do that.')
-        return redirect(url_for('index'))
-
     if request.method == 'GET':
         try:
             category = session.query(Category).filter_by(slug=cat_slug).one()
@@ -115,8 +159,11 @@ def show_cat_item(item_slug):
     category to the URI seems worthless.
     """
     try:
+        # print('retrieving item')
         item = session.query(Item).filter_by(slug=item_slug).one()
+        # print('retrieving category')
         cat = session.query(Category).filter_by(id=item.cat_id).one()
+        # print('Rendering template')
         return render_template('category_item.html', item=item)
     except Exception, e:
         flash('Invalid item referrenced.')
@@ -124,14 +171,11 @@ def show_cat_item(item_slug):
 
 
 @app.route('/catalog/item/<item_slug>/delete', methods=['GET', 'POST'])
+@verify_login(refresh=SESS_TO)
 def delete_cat_item(item_slug):
     """
     delete_cat_item - deletes the item speficied by the slug
     """
-    if 'username' not in login_session:
-        flash('You are not authorized to do that.')
-        return redirect(url_for('index'))
-
     if request.method == 'GET':
         try:
             item = session.query(Item).filter_by(slug=item_slug).one()
@@ -152,16 +196,11 @@ def delete_cat_item(item_slug):
 
 
 @app.route('/catalog/item/<item_slug>/edit', methods=['GET', 'POST'])
+@verify_login(refresh=SESS_TO)
 def edit_cat_item(item_slug):
     """
     edit_cat_item - edit the item specified by the slug
     """
-    if 'username' not in login_session:
-        flash('You are not authorized to do that.')
-        # categories = session.query(Category).order_by(asc(Category.name))
-        # latest_items = session.query(Item).order_by(desc(Item.id)).limit(5)
-        return redirect(url_for('index'))
-
     if request.method == 'GET':
         try:
             item = session.query(Item).filter_by(slug=item_slug).one()
@@ -172,8 +211,8 @@ def edit_cat_item(item_slug):
             flash('Error fulfilling request.')
             return redirect(url_for('index'))
     elif request.method == 'POST':
-        for x in request.form:
-            print('%s : %s' % (x, request.form[x]))
+        # for x in request.form:
+        #     print('%s : %s' % (x, request.form[x]))
 
         try:
             item = session.query(Item).filter_by(slug=item_slug).one()
@@ -206,6 +245,7 @@ def edit_cat_item(item_slug):
 
 
 @app.route('/catalog/item/new', methods=['GET', 'POST'])
+@verify_login(refresh=SESS_TO)
 def new_item():
     """
     new_item - Function that creates a new item. This function also creates a
@@ -224,8 +264,8 @@ def new_item():
         # to determine if a new category was requested to be added. Also check
         # for duplicate categories.
 
-        for k in request.form:
-            print(request.form[k])
+        # for k in request.form:
+        #     print(request.form[k])
         # extract the form data
         item_cat = ''
         if 'category_select' in request.form:
@@ -235,13 +275,13 @@ def new_item():
 
         try:
             try:
-                print('Retrieving the specified category - %s' % item_cat)
+                # print('Retrieving the specified category - %s' % item_cat)
                 category = session.query(Category).filter_by(name=item_cat).\
                     one()
             except:
                 new_cat_name = str(request.form['new_cat_title'])
-                print('Create a new category with name - {}'.
-                      format(new_cat_name))
+                # print('Create a new category with name - {}'.
+                #       format(new_cat_name))
                 new_category = Category(name=new_cat_name,
                                         slug=gen_cat_slug(new_cat_name))
                 session.add(new_category)
@@ -255,9 +295,9 @@ def new_item():
                     return redirect(url_for('index'))
 
             item_slug = gen_item_slug(category.slug)
-            print('Creating a new item with name - {}, cat_id - {}, desc -'
-                  '"{}", slug - {}'.format(item_title, item_desc,
-                                           category.id, item_slug))
+            # print('Creating a new item with name - {}, cat_id - {}, desc -'
+            #       '"{}", slug - {}'.format(item_title, item_desc,
+            #                                category.id, item_slug))
 
             newItem = Item(title=item_title, description=item_desc,
                            cat_id=category.id, slug=item_slug)
@@ -278,7 +318,7 @@ def gen_cat_slug(base):
     lowercase and replaces ' ' with '-'
     """
     ret = base.lower().replace(' ', '-')
-    print('slug for category %s - %s' % (base, ret))
+    # print('slug for category %s - %s' % (base, ret))
     return ret
 
 
@@ -298,18 +338,13 @@ def login():
     """
     # prevent re-login if already logged in
     if 'username' in login_session:
-        return redirect(url_for('index'))
+        host = request.headers['host']
+        src_url = request.headers['referer']
+        redirect_path = src_url.replace(host, '')
+        return redirect(redirect_path)
 
     # handle GET requests to this endpoint
     if request.method == 'GET':
-        if 'username' in login_session:
-            print('username: %s' % login_session['username'])
-            host = request.headers['host']
-            src_url = request.headers['referer']
-
-            redirect_path = src_url.replace(host, '')
-            return redirect(redirect_path)
-
         # creates a pseudo-random alphanumeric string of 32 characters to act
         # as an anti-forgery token. This token is recreated every time '/login'
         # is hit
@@ -379,18 +414,22 @@ def login():
         login_session['email'] = data['email']
 
         # Check to see if a user exists, if so, don't make a new one.
-        uid = getUserId(login_session['email'])
+        uid = get_user_id(login_session['email'])
         if uid is None:
             # if we got nothing from the db when we pinged it with the provided
             # email, then we know that there is no such user and we need to add
             # a new one
-            print('Adding new user with email %', login_session['email'])
-            uid = createUser(login_session)
+            # print('Adding new user with email %', login_session['email'])
+            uid = create_user(login_session)
 
         # either after creating a new user or after verifying it's existence,
         # set the session user_id variable
         login_session['user_id'] = uid
         login_session['provider'] = 'google'
+
+        # generate a 10-min timeout token so we aren't logged in forever.
+        login_session['timeout_token'] = \
+        get_user_info(uid).gen_auth_token(SESS_TO)
 
         # formatted output for the sign-in button callback
         output = ''
@@ -433,12 +472,7 @@ def logout():
 
     # if the token invalidation was successful, remove all data associated with
     # this token
-    del login_session['user_id']
-    del login_session['provider']
-    del login_session['email']
-    del login_session['username']
-    del login_session['access_token']
-    del login_session['gplus_id']
+    invalidate_session()
 
     flash('You have been successfully logged out.')
     return redirect(url_for('index'))
@@ -447,6 +481,17 @@ def logout():
 #
 # Helper methods for the login functionality
 #
+def invalidate_session():
+    """
+    invalidate_session - removes all session data pertaining to a specific user
+    """
+    del login_session['user_id']
+    del login_session['provider']
+    del login_session['email']
+    del login_session['username']
+    del login_session['access_token']
+    del login_session['gplus_id']
+
 def verify_access_token(credentials):
     """
     verify_access_token - verifies the access token returned from the google
@@ -505,7 +550,7 @@ def verify_access_token(credentials):
     return None
 
 
-def createUser(login_session):
+def create_user(login_session):
     """
     Creates a new user in the DB using the session parameters
     """
@@ -518,7 +563,7 @@ def createUser(login_session):
     return user.id
 
 
-def getUserInfo(user_id):
+def get_user_info(user_id):
     """
     Returns the User entry that has `user_id` as id
     """
@@ -526,7 +571,7 @@ def getUserInfo(user_id):
     return user
 
 
-def getUserId(email):
+def get_user_id(email):
     """
     Returns the ID for a User entry containing `email` as the registered email
     address
