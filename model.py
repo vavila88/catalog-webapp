@@ -5,6 +5,12 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy import create_engine
 
+# timeout token implementation
+import random
+import string
+from itsdangerous import(TimedJSONWebSignatureSerializer as Serializer,
+                         BadSignature, SignatureExpired)
+
 # User table constants
 UNAME_MAX = 32
 EMAIL_MAX = 32
@@ -18,6 +24,10 @@ NUM_SLUG_CHARS = 5
 ITEM_SLUG_MAX = ITEM_TITLE_MAX + NUM_SLUG_CHARS
 
 Base = declarative_base()
+
+# key used to create a timeout token
+secret_key = ''.join(random.choice(string.ascii_uppercase + string.digits)
+                     for x in xrange(32))
 
 
 class User(Base):
@@ -34,6 +44,31 @@ class User(Base):
     uname = Column(String(UNAME_MAX))
     email = Column(String(EMAIL_MAX), index=True)
     picture = Column(String)
+
+    def gen_auth_token(self, expiration=600):
+        """
+        gen_auth_token - generates a simple timeout token for a users session
+        """
+        s = Serializer(secret_key, expires_in = expiration)
+        return s.dumps({'id':self.id})
+
+    # static method on this ORM object to verify an auth token.
+    @staticmethod
+    def verify_auth_token(token):
+        """
+        verify_auth_token - verifies the user token to ensure that the timeout
+        hasn't elapsed
+        """
+        s = Serializer(secret_key)
+        try: # attempt to extract the encrypted user id from the token
+            data = s.loads(token)
+        except SignatureExpired:# expired token - invalid
+            return False
+        except BadSignature:# tampered token - invalid
+            return False
+
+        # return the id on successful token decryption
+        return data['id']
 
     @property
     def serialize(self):
