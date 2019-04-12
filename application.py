@@ -50,7 +50,7 @@ CLIENT_ID = \
 SESS_TO = 600
 
 
-def verify_login(refresh=300):
+def verify_login(refresh=600):
     """
     verify_login - decorator that checks if a user is logged in and within the
     timeout specified. If a user is logged in the decorator will refresh their
@@ -60,7 +60,7 @@ def verify_login(refresh=300):
     def decorator(f):
         # pass the args to the decorated function into our decorator
         def is_logged_in(*args, **kwargs):
-            print('in the decorator with timeout - %s' % refresh)
+            # print('in the decorator with timeout - %s' % refresh)
             # check that the user is logged in to begin with
             if 'username' not in login_session:
                 flash('You are not authorized to do that.')
@@ -147,7 +147,7 @@ def delete_cat(cat_slug):
         session.delete(category)
         session.commit
 
-        flash('Category "%s": and associated items deleted.' % category.name)
+        flash('Category "%s" and associated items deleted.' % category.name)
         return redirect(url_for('index'))
 
 
