@@ -1,13 +1,24 @@
 function optionHandler() {
+    // Get the category dropdown element
     let selection = document.getElementById('category_select');
+    // If the element exists, proceed to pick the necessary data.
     if (selection !== null) {
         let sel = selection[selection.selectedIndex].value;
+
+        // Set the hidden input value to the value selected by the dropdown
+        // $('#cat_name_input').val(sel);
+        // report for debugging purpose
+        // console.log($('#cat_name_input').val());
+
+        // If the dropdown selection was to add a new category, provide an input
+        // for adding it
         if (sel == 'new_cat') {
             let nc_str =`<label class="new_cat_label"for="add_new_cat">New Category:</label>
                         <input type ="text" maxlength="32" class="form-control new_cat_textbox" name="new_cat_title" placeholder="New category name" required>`
             $('#category_select').after(nc_str);
         }
         else {
+
             // remove the input box from the form if we navigate away from the "add
             // new category" option
             $('.new_cat_label').remove();
@@ -26,8 +37,10 @@ function showCategoryOptions() {
             type : "GET",
             dataType : "json",
         }).done(function(result) {
-            let sel_hdr ='<select name="category_select" id="category_select" onchange="optionHandler()">' +
-                          '<option value="temp_cat">temp cat</option>';
+            let sel_hdr ='<select name="category_select" id="category_select" '+
+                         'class="selectpicker" data-style="btn-default" ' +
+                         'onchange="optionHandler()">' +
+                         '<option value="temp_cat">temp cat</option>';
                             //{% for c in category_list%}
             let opt_str = '';
             // console.log(result['Category']);
@@ -55,4 +68,20 @@ function showCategoryOptions() {
     }
 };
 
-$(document).ready(function(){optionHandler();});
+
+$(document).ready(function(){
+    optionHandler();
+    // Changes the value of the bootstrap dropdown so the selected option is
+    // displayed
+    $('.cat-dropdown-menu > button').click(function (){
+        console.log('in the callback');
+        // Change the value in the button, including the caret
+        $(this).parents(".dropdown").find('.btn').html($(this).text() + ' <span class="caret"></span>');
+        // Change the value of the button
+        let sel = $(this).data('value')
+        // Set the hidden input value to the value selected by the dropdown
+        $('#cat_name_input').val(sel);
+        // report for debugging purpose
+        console.log($('#cat_name_input').val());
+    });
+});
