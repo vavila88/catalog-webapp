@@ -1,17 +1,21 @@
 {% extends "index.html" %}
 {% block content %}
-<h2> Are you sure you want to delete the category {{category.name}}? </h2>
-<h2> !!!  WARNING: Deleting this category will also delete all associated items !!!</h2>
-
-<form action="#" method = "post" style="display:inline">
-
-	<button type="submit" class="btn btn-default delete" id="submit" type="submit">
-	<span class="glyphicon glyphicon-trash" aria-hidden="true"></span>Delete</button>
-</form>
-	<a href = '{{url_for('index')}}'>
-		<button class="btn btn-default delete">
+<div class="row banner main col-md-12 padding-bottom ml-0 text-center">
+    <div class="col-md-2 padding-bottom">
+    </div>
+    <div class="col-md-8 padding-bottom">
+        <h2> Are you sure you want to delete the category "{{category.name}}"? </h2>
+        <h2> !!!  WARNING: Deleting this category will also delete all associated items !!!</h2>
+        <form action="#" method = "post" style="display:inline">
+            <button type="submit" class="btn btn-danger btn-lg delete" id="submit" type="submit">
+            <span class="glyphicon glyphicon-trash" aria-hidden="true"></span>Delete</button>
+        </form>
+        <a href = '{{url_for('index')}}'>
+		<button class="btn btn-lg delete">
 		<span class="glyphicon glyphicon-remove" aria-hidden="true"></span> Cancel</button>
-	</a>
-
-
+        </a>
+    </div>
+    <div class="col-md-2 padding-bottom">
+    </div>
+</div>
 {% endblock %}

@@ -12,19 +12,19 @@
     {% endwith %}
 </div>
 <div class="row ml-0">
-    <section class="row col-md-4 padding-bottom ml-0">
+    <div class="row col-md-4 padding-bottom ml-0">
         <h1>Item Categories</h1>
-        <section class="row col-md-8 ">
+        <div class="row col-md-12 ">
             <div class="category-entity list-group list-group-flush">
             {% for cat in category_list %}
             <a class="list-group-item" href="{{url_for('show_all_cat_items', cat_slug=cat.slug)}}">{{cat.name}}</a>
             {% endfor %}
             </div>
-        </section>
-    </section>
-    <section class="row col-md-8">
+        </div>
+    </div>
+    <div class="row col-md-8">
         <h1>Latest Additions</h1>
-        <section class="row padding-top col-md-12 padding-bottom">
+        <div class="row padding-top col-md-12 padding-bottom">
             <div class="category-entity list-group list-group-flush">
         {% if 'username' in session %}
             <a class="list-group-item info" href="{{url_for('new_item')}}">Add Item</a>
@@ -34,7 +34,7 @@
             item_slug = i.slug) }}">{{i.title}} <i>({{i.category.name}})</i></a>
             {% endfor %}
             </div>
-        </section>
-    </section>
+        </div>
+    </div>
 </div>
 {% endblock %}

@@ -1,5 +1,8 @@
-<html>
-    <head>
+{% extends "index.html" %}
+{% block content %}
+<div class="row text-center ml-0">
+    <div class="col-md-3">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
         <script src="https://apis.google.com/js/client:platform.js?onload=start" async defer></script>
         <script>
             function start() {
@@ -14,16 +17,24 @@
                 });
             }
         </script>
-    </head>
-    <body>
-        <!-- Google OAuth login section -->
-        <h1><strong>TODO: Make this page a bit prettier</strong></h1>
-        <button id="signinButton">Sign in with Google</button>
+    </div>
+    <!-- Google OAuth login div -->
+    <div class="col-md-6">
+        <button class="btn btn-outline-secondary btn-lg" id="signinButton">Sign in with Google</button>
+    </div>
+    <div class="col-md-3">
+    </div>
+</div>
+<div class="row text-center ml-0">
+    <div class="col-md-3">
+    </div>
+    <div class="col-md-6">
         <div id="result"></div>
+    </div>
+    <div class="col-md-3">
         <script>
             // Since this is in an iframe now, we have to use the parent's
             // jquery instance
-            $ = parent.$
             $('#signinButton').click(function() {
                 function signInCallback(authResult){
                     if (authResult['code']) {
@@ -39,7 +50,10 @@
                             },
                             contentType : 'application/octet-stream;, charset=utf-8',
                             success : function(result) {
-                                $('#result').html('Login Successful!</br>'+ result + '</br>Redirecting...')
+                                $('#result').html('Login Successful!</br>'+
+                                    result + '</br>Redirecting...<div' +
+                                    'class="spinner-border" role="status">'+
+                                    '<span class="sr-only">Loading...</span></div>')
                                 setTimeout(function() {
                                     window.location.href = "/";
                                 }, 2000);
@@ -57,5 +71,6 @@
             auth2.grantOfflineAccess().then(signInCallback);
         });
         </script>
-    </body>
-</html>
+    </div>
+</div>
+{% endblock %}

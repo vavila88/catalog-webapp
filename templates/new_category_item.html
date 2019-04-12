@@ -1,42 +1,57 @@
 {% extends "index.html" %}
 {% block content %}
-	<div class="row divider cyan">
-		<div class="col-md-12"></div>
-	</div>
-	<div class="row banner menu">
-		<div class="col-md-11 col-md-offset-1 padding-none">
+<div class="row banner main col-md-12 padding-bottom ml-0 text-center">
+    <div class="col-md-3 padding-bottom"></div>
+    <div class="col-md-6 banner">
+        <div class="col-md-12 col-md-offset-1 padding-none">
 			<h1>New Catalog Item</h1>
-		</div>
-	</div>
-	<div class="row">
-		<div class="col-md-6 col-md-offset-1 padding-top">
-			<form action="#" method = "post">
-				<div class="form-group">
-					<label for="name">Name:</label>
-					<input type ="text" maxlength="32" class="form-control" name="title" placeholder="Item name" required>
+        </div>
+    </div>
+    <div class="col-md-3 padding-bottom"></div>
+</div>
+<div class="row banner main col-md-12 padding-bottom ml-0 text-center">
+    <div class="col-md-2 padding-bottom"></div>
+    <div class="col-md-8 pading-bottom text-left">
+        <form action="#" method = "post">
+            <div class="form-group">
+                <label for="name">Name:</label>
+                <input type ="text" maxlength="32" class="form-control" name="title" placeholder="Item name" required>
 
-					<label for="description">Description:</label>
-					<textarea class="form-control" maxlength="250" rows="3" name="description" placeholder="Description of the item" required></textarea>
+                <label for="description">Description:</label>
+                <textarea class="form-control" maxlength="250" rows="3" name="description" placeholder="Description of the item" required></textarea>
 
-					<label for="category">Category:</label>
-                    </br>
-                    {% if category_list | length  > 1 %}
-                    <select name="category_select" id="category_select" onchange="optionHandler()">
+                <label for="category">Category:</label>
+                {% if category_list | length  > 1 %}
+                </br>
+                <div class="dropdown" id="category_select">
+                    <button class="btn btn-secondary dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Categories<span class="caret"></span>
+                    </button>
+                    <div class="dropdown-menu cat-dropdown-menu" aria-labelledby="dropdownMenu2">
                         {% for c in category_list%}
-                        <option name="{{ c.slug }}">{{ c.name }}</option>
+                        <button class="dropdown-item cat-dropdown-item"
+                            type="button" data-value="{{c.name}}">{{c.name}}</button>
                         {% endfor %}
-                        <option value="new_cat">-- Add a new category --</option>
-                    </select>
-                    {% else %}
-                    <label class="new_cat_label"for="add_new_cat">New Category:</label>
-                    <input type ="text" maxlength="32" class="form-control new_cat_textbox" name="new_cat_title" placeholder="New category name" required>
-                    {% endif %}
-                    </br>
-					<button type="submit" class="btn btn-default" id="submit" type="submit">
-					</span>Create</button>
-				</div>
-			</form>
-		</div>
-	</div>
+                        <button class="dropdown-item cat-dropdown-item"
+                            data-value="new_cat" type="button">-- Add a new category --</button>
+                    </div>
+                </div>
+                <input id="cat_name_input" type ="hidden" maxlength="32" class="form-control" name="category_name" value="fubar" required>
+
+                {% else %}
+                <label class="new_cat_label"for="add_new_cat">New Category:</label>
+                <input type ="text" maxlength="32" class="form-control new_cat_textbox" name="new_cat_title" placeholder="New category name" required>
+                {% endif %}
+                </br>
+                <button type="submit" class="btn btn-default" id="submit" type="submit">
+                </span>Create</button>
+                <a href = '{{url_for('index')}}'>
+                    <button type="button" class="btn btn-default">Cancel</button>
+                </a>
+            </div>
+        </form>
+    </div>
+    <div class="col-md-2 padding-bottom"></div>
+</div>
 {% endblock %}
 
